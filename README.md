@@ -24,6 +24,10 @@ The app runs the following checks when you tap **Run Detection**:
 | **Location object** | Inspects the current location obtained via FusedLocationProviderClient:<br/>• `isFromMockProvider` (deprecated)<br/>• `isMock` (API 31+)<br/>• `extras` bundle flag `mockLocation` |
 | **Hook detection** | Verifies that common `Location` class fields (provider, extras, isMock) have not been tampered with via runtime hooks. |
 
+## Bypassing Detection
+
+Detection can be reduced to zero by using the [HideMockLocation](https://github.com/auag0/HideMockLocation) Xposed module. To achieve this, ensure that you include **System Framework** and **Settings Storage** in the module's scope within your Xposed manager (e.g., LSPosed).
+
 ## How It Works
 
 1. The app requests coarse/fine location permissions.
