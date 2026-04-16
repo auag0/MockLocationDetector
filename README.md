@@ -5,6 +5,8 @@
 
 An Android app that detects mock locations (GPS spoofing) using multiple techniques. Helps developers and privacy‑conscious users verify if the device’s location is genuine.
 
+<img src="images/screenshot-1.png" width="256">
+
 ## Features
 - 🔍 Detects mock location through 4 different methods
 - 📱 Modern UI built with Jetpack Compose
