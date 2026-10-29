@@ -20,11 +20,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
-    fun runDetection(isGrantedFineLocation: Boolean) {
+    fun runDetection() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, results = emptyList())
 
-            val detections = repository.runDetections(isGrantedFineLocation)
+            val detections = repository.runDetections()
 
             _uiState.value = _uiState.value.copy(isLoading = false, results = detections)
         }

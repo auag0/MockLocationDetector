@@ -41,38 +41,65 @@ class MainActivity : ComponentActivity() {
                 val coroutineScope = rememberCoroutineScope()
                 val uiState by viewModel.uiState.collectAsState()
 
-                val requestPermissionLauncher = rememberLauncherForActivityResult(
-                    ActivityResultContracts.RequestPermission()
-                ) { _ ->
-                    updatePermissionsState()
-                }
+                var lastRequestedPermission by remember { mutableStateOf<String?>(null) }
+                var pendingDetection by remember { mutableStateOf(false) }
 
-                fun requestPermission(permissionName: String) {
-                    if (shouldShowRequestPermissionRationale(permissionName)) {
-                        requestPermissionLauncher.launch(permissionName)
-                    } else {
-                        if (!isGrantedPermission(permissionName)) {
-                            coroutineScope.launch {
-                                val result = snackbarHostState.showSnackbar(
-                                    message = "Please grant location permission from settings",
-                                    actionLabel = "Open",
-                                    duration = SnackbarDuration.Long
-                                )
-                                if (result == SnackbarResult.ActionPerformed) {
-                                    openPermissionSettings()
-                                }
-                            }
-                        } else {
-                            requestPermissionLauncher.launch(permissionName)
+                fun showOpenSettingsSnackbar() {
+                    coroutineScope.launch {
+                        val result = snackbarHostState.showSnackbar(
+                            message = "Please grant location permission from settings",
+                            actionLabel = "Open",
+                            duration = SnackbarDuration.Long
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            openPermissionSettings()
                         }
                     }
+                }
+
+                val requestPermissionLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestPermission()
+                ) { granted ->
+                    updatePermissionsState()
+
+                    val requestedPermission = lastRequestedPermission
+                    if (!granted && !hasAnyLocationPermission() &&
+                        requestedPermission != null &&
+                        !shouldShowRequestPermissionRationale(requestedPermission)
+                    ) {
+                        // The system will no longer show the dialog ("Don't ask again").
+                        showOpenSettingsSnackbar()
+                    }
+
+                    if (pendingDetection) {
+                        pendingDetection = false
+                        if (hasAnyLocationPermission()) {
+                            viewModel.runDetection()
+                        }
+                    }
+                }
+
+                fun requestPermission(permissionName: String, runAfterGrant: Boolean = false) {
+                    if (isGrantedPermission(permissionName)) {
+                        if (runAfterGrant) viewModel.runDetection()
+                        return
+                    }
+                    lastRequestedPermission = permissionName
+                    pendingDetection = runAfterGrant
+                    requestPermissionLauncher.launch(permissionName)
                 }
 
                 MainScreen(
                     uiState = uiState,
                     fineLocationGranted = fineLocationGranted,
                     coarseLocationGranted = coarseLocationGranted,
-                    onRunDetection = { viewModel.runDetection(fineLocationGranted) },
+                    onRunDetection = {
+                        if (hasAnyLocationPermission()) {
+                            viewModel.runDetection()
+                        } else {
+                            requestPermission(ACCESS_FINE_LOCATION, runAfterGrant = true)
+                        }
+                    },
                     onRequestCoarse = { requestPermission(ACCESS_COARSE_LOCATION) },
                     onRequestFine = { requestPermission(ACCESS_FINE_LOCATION) },
                     onOpenSettings = { openPermissionSettings() },
@@ -90,6 +117,10 @@ class MainActivity : ComponentActivity() {
     private fun updatePermissionsState() {
         fineLocationGranted = isGrantedPermission(ACCESS_FINE_LOCATION)
         coarseLocationGranted = isGrantedPermission(ACCESS_COARSE_LOCATION)
+    }
+
+    private fun hasAnyLocationPermission(): Boolean {
+        return isGrantedPermission(ACCESS_FINE_LOCATION) || isGrantedPermission(ACCESS_COARSE_LOCATION)
     }
 
     private fun openPermissionSettings() {

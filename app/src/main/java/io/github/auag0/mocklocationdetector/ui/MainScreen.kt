@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -32,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.github.auag0.mocklocationdetector.MainUiState
 import io.github.auag0.mocklocationdetector.model.DetectionResult
+import io.github.auag0.mocklocationdetector.model.DetectionStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -123,6 +125,17 @@ fun PermissionButton(
 
 @Composable
 fun ResultItem(result: DetectionResult) {
+    val icon = when (result.status) {
+        DetectionStatus.DETECTED -> Icons.Default.Error
+        DetectionStatus.CLEAN -> Icons.Default.CheckCircle
+        DetectionStatus.UNKNOWN -> Icons.Default.Warning
+    }
+    val tint = when (result.status) {
+        DetectionStatus.DETECTED -> MaterialTheme.colorScheme.error
+        DetectionStatus.CLEAN -> MaterialTheme.colorScheme.primary
+        DetectionStatus.UNKNOWN -> MaterialTheme.colorScheme.tertiary
+    }
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -131,9 +144,9 @@ fun ResultItem(result: DetectionResult) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = if (result.isDetected) Icons.Default.Error else Icons.Default.CheckCircle,
+                imageVector = icon,
                 contentDescription = null,
-                tint = if (result.isDetected) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                tint = tint,
                 modifier = Modifier.size(40.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))
